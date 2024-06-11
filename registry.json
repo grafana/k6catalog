@@ -1,0 +1,5 @@
+{
+   "entries": {
+        "k6/x/output-kafka": {"Module": "github.com/grafana/xk6-output-kafka", "Versions": ["v0.1.0", "v0.2.0"]}
+   }
+}
