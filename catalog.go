@@ -17,17 +17,17 @@ var (
 
 // Dependency defines a Dependency with a version constrain
 // Examples:
-// Name: k6/x/k6-kubernetes   Constrains '*'
+// Name: k6/x/k6-kubernetes   Constrains *
 // Name: k6/x/k6-output-kafka Constrains >v0.9.0
 type Dependency struct {
-	Name       string
-	Constrains string
+	Name       string `json:"name,omitempty"`
+	Constrains string `json:"constrains,omitempty"`
 }
 
 // Module defines a go module that resolves a Dependency
 type Module struct {
-	Path    string
-	Version string
+	Path    string `json:"path,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 // Catalog defines the interface of the extension catalog service

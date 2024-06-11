@@ -20,8 +20,8 @@ type Registry interface {
 
 // Entry defines a registry entry
 type Entry struct {
-	Module   string
-	Versions []string
+	Module   string   `json:"module,omitempty"`
+	Versions []string `json:"versions,omitempty"`
 }
 
 type jsonRegistry struct {
