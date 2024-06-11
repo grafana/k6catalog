@@ -31,17 +31,17 @@ func TestResolve(t *testing.T) {
 	}{
 		{
 			title:  "resolve exact version",
-			dep:    Dependency{Module: "dep", Constrains: "v0.1.0"},
+			dep:    Dependency{Name: "dep", Constrains: "v0.1.0"},
 			expect: Module{Path: "github.com/dep", Version: "v0.1.0"},
 		},
 		{
 			title:  "resolve > constrain",
-			dep:    Dependency{Module: "dep", Constrains: ">v0.1.0"},
+			dep:    Dependency{Name: "dep", Constrains: ">v0.1.0"},
 			expect: Module{Path: "github.com/dep", Version: "v0.2.0"},
 		},
 		{
 			title:     "unsatisfied > constrain",
-			dep:       Dependency{Module: "dep", Constrains: ">v0.2.0"},
+			dep:       Dependency{Name: "dep", Constrains: ">v0.2.0"},
 			expectErr: ErrCannotSatisfy,
 		},
 	}

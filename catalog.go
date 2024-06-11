@@ -17,10 +17,10 @@ var (
 
 // Dependency defines a Dependency with a version constrain
 // Examples:
-// Module: k6/x/k6-kubernetes   Constrains '*'
-// Module: k6/x/k6-output-kafka Constrains >v0.9.0
+// Name: k6/x/k6-kubernetes   Constrains '*'
+// Name: k6/x/k6-output-kafka Constrains >v0.9.0
 type Dependency struct {
-	Module     string
+	Name       string
 	Constrains string
 }
 
@@ -46,7 +46,7 @@ func NewCatalog(registry Registry) Catalog {
 }
 
 func (c catalog) Resolve(ctx context.Context, dep Dependency) (Module, error) {
-	entry, err := c.registry.GetVersions(ctx, dep.Module)
+	entry, err := c.registry.GetVersions(ctx, dep.Name)
 	if err != nil {
 		return Module{}, err
 	}
@@ -67,5 +67,5 @@ func (c catalog) Resolve(ctx context.Context, dep Dependency) (Module, error) {
 		}
 	}
 
-	return Module{}, fmt.Errorf("%w : %s", ErrCannotSatisfy, dep.Module)
+	return Module{}, fmt.Errorf("%w : %s", ErrCannotSatisfy, dep.Name)
 }

@@ -46,7 +46,7 @@ func New() *cobra.Command {
 
 			catalog := k6catalog.NewCatalog(registry)
 
-			result, err := catalog.Resolve(cmd.Context(), k6catalog.Dependency{Module: dependency, Constrains: constrains})
+			result, err := catalog.Resolve(cmd.Context(), k6catalog.Dependency{Name: dependency, Constrains: constrains})
 			if err != nil {
 				return err
 			}
