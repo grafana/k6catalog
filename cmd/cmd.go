@@ -21,7 +21,7 @@ k6catalog -r registry.json -d k6/x/output-kafka -c >v0.7.0
 github.com/grafana/xk6-output-kafka v0.8.0
 `
 
-// New creates new cobra command for build command.
+// New creates new cobra command for resolve command.
 func New() *cobra.Command {
 	var (
 		path       string

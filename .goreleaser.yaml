@@ -1,5 +1,4 @@
-project_name: k6build
-before:
+project_name: k6catalog
   hooks:
     - go mod tidy
 dist: build/dist
