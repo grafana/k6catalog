@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+const (
+	defaultRegistry = "registry.json"
+)
+
 var (
 	ErrInvalidRegistry = fmt.Errorf("invalid module registry")     //nolint:revive
 	ErrEntryNotFound   = fmt.Errorf("entry not found in registry") //nolint:revive
@@ -26,6 +30,11 @@ type Entry struct {
 
 type jsonRegistry struct {
 	Entries map[string]Entry `json:"entries"`
+}
+
+// NewDefaultJSONRegistry creates a Registry from the default registry location
+func NewDefaultJSONRegistry() (Registry, error) {
+	return NewJSONRegistry(defaultRegistry)
 }
 
 // NewJSONRegistry returns a Registry from a json file
