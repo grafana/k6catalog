@@ -67,5 +67,5 @@ func (c catalog) Resolve(ctx context.Context, dep Dependency) (Module, error) {
 		}
 	}
 
-	return Module{}, fmt.Errorf("%w : %s", ErrCannotSatisfy, dep.Name)
+	return Module{}, fmt.Errorf("%w : %s %s", ErrCannotSatisfy, dep.Name, dep.Constrains)
 }
