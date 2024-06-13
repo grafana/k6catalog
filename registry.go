@@ -28,34 +28,36 @@ type Entry struct {
 	Versions []string `json:"versions,omitempty"`
 }
 
-type jsonRegistry struct {
-	Entries map[string]Entry `json:"entries"`
+type registry struct {
+	dependencies map[string]Entry
 }
 
-// NewDefaultJSONRegistry creates a Registry from the default registry location
-func NewDefaultJSONRegistry() (Registry, error) {
-	return NewJSONRegistry(defaultRegistry)
+// DefaultRegistry creates a Registry from the default registry location
+func DefaultRegistry() (Registry, error) {
+	return NewRegistryFromJSON(defaultRegistry)
 }
 
-// NewJSONRegistry returns a Registry from a json file
-func NewJSONRegistry(path string) (Registry, error) {
+// NewRegistryFromJSON returns a Registry from a json file
+func NewRegistryFromJSON(path string) (Registry, error) {
 	buff, err := os.ReadFile(path) //nolint:forbidigo,gosec
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidRegistry, err)
 	}
-	registry := jsonRegistry{}
 
-	err = json.Unmarshal(buff, &registry)
+	dependencies := map[string]Entry{}
+	err = json.Unmarshal(buff, &dependencies)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidRegistry, err)
 	}
 
-	return registry, nil
+	return registry{
+		dependencies: dependencies,
+	}, nil
 }
 
 // GetVersions returns the versions for a given module
-func (r jsonRegistry) GetVersions(_ context.Context, mod string) (Entry, error) {
-	entry, found := r.Entries[mod]
+func (r registry) GetVersions(_ context.Context, mod string) (Entry, error) {
+	entry, found := r.dependencies[mod]
 	if !found {
 		return Entry{}, fmt.Errorf("%w : %s", ErrEntryNotFound, mod)
 	}

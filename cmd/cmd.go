@@ -17,7 +17,7 @@ Resolves dependencies considering version constraints
 
 const example = `
 
-k6catalog -r registry.json -d k6/x/output-kafka -c >v0.7.0
+k6catalog resolve -r registry.json -d k6/x/output-kafka -c >v0.7.0
 github.com/grafana/xk6-output-kafka v0.8.0
 `
 
@@ -39,7 +39,7 @@ func New() *cobra.Command {
 				return fmt.Errorf("path to registry must be specified")
 			}
 
-			registry, err := k6catalog.NewJSONRegistry(path)
+			registry, err := k6catalog.NewRegistryFromJSON(path)
 			if err != nil {
 				return err
 			}
