@@ -7,10 +7,6 @@ import (
 	"os"
 )
 
-const (
-	defaultRegistry = "registry.json"
-)
-
 var (
 	ErrInvalidRegistry = fmt.Errorf("invalid module registry")     //nolint:revive
 	ErrEntryNotFound   = fmt.Errorf("entry not found in registry") //nolint:revive
@@ -32,13 +28,8 @@ type registry struct {
 	dependencies map[string]Entry
 }
 
-// DefaultRegistry creates a Registry from the default registry location
-func DefaultRegistry() (Registry, error) {
-	return NewRegistryFromJSON(defaultRegistry)
-}
-
-// NewRegistryFromJSON returns a Registry from a json file
-func NewRegistryFromJSON(path string) (Registry, error) {
+// loadRegistryFromJSON returns a Registry from a json file
+func loadRegistryFromJSON(path string) (Registry, error) {
 	buff, err := os.ReadFile(path) //nolint:forbidigo,gosec
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidRegistry, err)

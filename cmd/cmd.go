@@ -39,12 +39,10 @@ func New() *cobra.Command {
 				return fmt.Errorf("path to registry must be specified")
 			}
 
-			registry, err := k6catalog.NewRegistryFromJSON(path)
+			catalog, err := k6catalog.NewCatalogFromJSON(path)
 			if err != nil {
 				return err
 			}
-
-			catalog := k6catalog.NewCatalog(registry)
 
 			result, err := catalog.Resolve(cmd.Context(), k6catalog.Dependency{Name: dependency, Constrains: constrains})
 			if err != nil {
@@ -57,7 +55,7 @@ func New() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&path, "registry", "r", "", "path to registry")
+	cmd.Flags().StringVarP(&path, "catalog-file", "f", "", "path to catalog file")
 	cmd.Flags().StringVarP(&dependency, "name", "d", "", "name of dependency")
 	cmd.Flags().StringVarP(&constrains, "constrains", "c", "*", "version constrains")
 

@@ -10,6 +10,10 @@ import (
 	"github.com/Masterminds/semver"
 )
 
+const (
+	defaultCatalogFile = "k6catalog.json"
+)
+
 var (
 	ErrCannotSatisfy     = errors.New("cannot satisfy dependency") //nolint:revive
 	ErrInvalidConstrain  = errors.New("invalid constrain")         //nolint:revive
@@ -41,9 +45,23 @@ type catalog struct {
 	registry Registry
 }
 
-// NewCatalog creates a Catalog from a registry
+// NewCatalog creates a catalog from a registry
 func NewCatalog(registry Registry) Catalog {
 	return catalog{registry: registry}
+}
+
+// NewCatalogFromJSON creates a Catalog from a json file
+func NewCatalogFromJSON(catalogFile string) (Catalog, error) {
+	registry, err := loadRegistryFromJSON(catalogFile)
+	if err != nil {
+		return nil, err
+	}
+	return catalog{registry: registry}, nil
+}
+
+// DefaultCatalog creates a Catalog from the default json file 'catalog.json'
+func DefaultCatalog() (Catalog, error) {
+	return NewCatalogFromJSON(defaultCatalogFile)
 }
 
 func (c catalog) Resolve(ctx context.Context, dep Dependency) (Module, error) {
