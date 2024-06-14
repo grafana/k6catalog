@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/Masterminds/semver"
 )
@@ -56,14 +57,22 @@ func (c catalog) Resolve(ctx context.Context, dep Dependency) (Module, error) {
 		return Module{}, fmt.Errorf("%w : %s", ErrInvalidConstrain, dep.Constrains)
 	}
 
+	versions := []*semver.Version{}
 	for _, v := range entry.Versions {
 		version, err := semver.NewVersion(v)
 		if err != nil {
 			return Module{}, err
 		}
+		versions = append(versions, version)
+	}
 
-		if constrain.Check(version) {
-			return Module{Path: entry.Module, Version: version.Original()}, nil
+	if len(versions) > 0 {
+		// try to find the higher version that satisfies the condition
+		sort.Sort(sort.Reverse(semver.Collection(versions)))
+		for _, v := range versions {
+			if constrain.Check(v) {
+				return Module{Path: entry.Module, Version: v.Original()}, nil
+			}
 		}
 	}
 

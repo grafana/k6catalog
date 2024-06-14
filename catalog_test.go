@@ -40,6 +40,11 @@ func TestResolve(t *testing.T) {
 			expect: Module{Path: "github.com/dep", Version: "v0.2.0"},
 		},
 		{
+			title:  "resolve latest version",
+			dep:    Dependency{Name: "dep", Constrains: "*"},
+			expect: Module{Path: "github.com/dep", Version: "v0.2.0"},
+		},
+		{
 			title:     "unsatisfied > constrain",
 			dep:       Dependency{Name: "dep", Constrains: ">v0.2.0"},
 			expectErr: ErrCannotSatisfy,
