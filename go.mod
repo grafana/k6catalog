@@ -3,7 +3,7 @@ module github.com/grafana/k6catalog
 go 1.22.2
 
 require (
-	github.com/Masterminds/semver v1.5.0
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/spf13/cobra v1.8.0
 )
 
