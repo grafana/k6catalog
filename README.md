@@ -8,7 +8,7 @@ See documentation https://pkg.go.dev/github.com/grafana/k6catalog
 
 ## JSON file catalog
 
-The `NewCatalogFromJSON` function creates a catalog from a JSON file that has the following scheme:
+The `NewCatalogFromJSON` function creates a catalog from a JSON file that has the following [schema](./schema.json):
 
 ```
 {
