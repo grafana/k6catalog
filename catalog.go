@@ -5,6 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"sort"
 
 	"github.com/Masterminds/semver/v3"
@@ -18,6 +21,7 @@ var (
 	ErrCannotSatisfy     = errors.New("cannot satisfy dependency") //nolint:revive
 	ErrInvalidConstrain  = errors.New("invalid constrain")         //nolint:revive
 	ErrUnknownDependency = errors.New("unknown dependency")        //nolint:revive
+	ErrDownload          = errors.New("downloading catalog")       //nolint:revive
 )
 
 // Dependency defines a Dependency with a version constrain
@@ -57,6 +61,48 @@ func NewCatalogFromJSON(catalogFile string) (Catalog, error) {
 		return nil, err
 	}
 	return catalog{registry: registry}, nil
+}
+
+// NewCatalogFromURL creates a Catalog from a URL
+func NewCatalogFromURL(ctx context.Context, catalogURL string) (Catalog, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, catalogURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("%w %w", ErrDownload, err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w %w", ErrDownload, err)
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%w %s", ErrDownload, resp.Status)
+	}
+
+	catalogFile, err := os.CreateTemp("", "catalog*.json") //nolint:forbidigo
+	if err != nil {
+		return nil, fmt.Errorf("%w %w", ErrDownload, err)
+	}
+
+	_, err = io.Copy(catalogFile, resp.Body)
+	if err != nil {
+		_ = catalogFile.Close()
+		_ = os.Remove(catalogFile.Name()) //nolint:forbidigo
+		return nil, fmt.Errorf("%w %w", ErrDownload, err)
+	}
+
+	err = catalogFile.Close()
+	if err != nil {
+		return nil, fmt.Errorf("%w %w", ErrDownload, err)
+	}
+
+	catalog, err := NewCatalogFromJSON(catalogFile.Name())
+	if err != nil {
+		return nil, fmt.Errorf("%w %w", ErrDownload, err)
+	}
+
+	return catalog, nil
 }
 
 // DefaultCatalog creates a Catalog from the default json file 'catalog.json'
