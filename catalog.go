@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	defaultCatalogFile = "k6catalog.json"
+	DefaultCatalogFile         = "catalog.json"                        //nolint:revive
+	DefaultExtensionCatalogURL = "https://registry.k6.io/catalog.json" //nolint:revive
 )
 
 var (
@@ -125,9 +126,9 @@ func NewCatalogFromURL(ctx context.Context, catalogURL string) (Catalog, error) 
 	return catalog, nil
 }
 
-// DefaultCatalog creates a Catalog from the default json file 'catalog.json'
+// DefaultCatalog creates a Catalog from the default catalog URL
 func DefaultCatalog() (Catalog, error) {
-	return NewCatalogFromFile(defaultCatalogFile)
+	return NewCatalogFromURL(context.TODO(), DefaultExtensionCatalogURL)
 }
 
 func (c catalog) Resolve(ctx context.Context, dep Dependency) (Module, error) {
