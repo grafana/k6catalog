@@ -39,7 +39,7 @@ func New() *cobra.Command {
 				return fmt.Errorf("path to registry must be specified")
 			}
 
-			catalog, err := k6catalog.NewCatalogFromJSON(path)
+			catalog, err := k6catalog.NewCatalogFromFile(path)
 			if err != nil {
 				return err
 			}

@@ -24,6 +24,8 @@ issues:
        - gocognit
        - funlen
        - lll
+       - forbidigo
+       - gosec
    - path: js\/modules\/k6\/http\/.*_test\.go
      linters:
        # k6/http module's tests are quite complex because they often have several nested levels.

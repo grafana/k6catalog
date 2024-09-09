@@ -1,26 +1,20 @@
 package k6catalog
 
 import (
+	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-type fakeRegistry struct {
-	entries map[string]Entry
-}
-
-func (r fakeRegistry) GetVersions(_ context.Context, dep string) (Entry, error) {
-	e, found := r.entries[dep]
-	if !found {
-		return Entry{}, fmt.Errorf("entry not found : %s", dep)
-	}
-
-	return Entry{Module: e.Module, Versions: e.Versions}, nil
-}
+const (
+	testCatalog    = `{ "dep": {"Module": "github.com/dep", "Versions": ["v0.1.0", "v0.2.0"]}}`
+	invalidCatalog = `{ "dep": {}}`
+)
 
 func TestResolve(t *testing.T) {
 	t.Parallel()
@@ -53,13 +47,11 @@ func TestResolve(t *testing.T) {
 		},
 	}
 
-	registry := fakeRegistry{
-		entries: map[string]Entry{
-			"dep": {Module: "github.com/dep", Versions: []string{"v0.1.0", "v0.2.0"}},
-		},
+	json := bytes.NewBuffer([]byte(testCatalog))
+	catalog, err := NewCatalogFromJSON(json)
+	if err != nil {
+		t.Fatalf("test setup %v", err)
 	}
-
-	catalog := NewCatalog(registry)
 	for _, tc := range testCases {
 		tc := tc
 
@@ -78,9 +70,38 @@ func TestResolve(t *testing.T) {
 	}
 }
 
-const testCatalog = `{
-	"k6/x/output-kafka": {"Module": "github.com/grafana/xk6-output-kafka", "Versions": ["v0.1.0", "v0.2.0"]}
-}`
+func TestCatalogFromJSON(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name      string
+		json      string
+		expectErr error
+	}{
+		{
+			name:      "load json",
+			json:      testCatalog,
+			expectErr: nil,
+		},
+		{
+			name:      "empty json",
+			json:      "",
+			expectErr: ErrInvalidCatalog,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			json := bytes.NewBuffer([]byte(tc.json))
+			_, err := NewCatalogFromJSON(json)
+			if !errors.Is(err, tc.expectErr) {
+				t.Fatalf("expected %v got %v", tc.expectErr, err)
+			}
+		})
+	}
+}
 
 func TestCatalogFromURL(t *testing.T) {
 	t.Parallel()
@@ -104,13 +125,6 @@ func TestCatalogFromURL(t *testing.T) {
 			},
 			expectErr: ErrDownload,
 		},
-		{
-			name: "empty catalog",
-			handler: func(w http.ResponseWriter, _ *http.Request) {
-				w.WriteHeader(http.StatusOK)
-			},
-			expectErr: ErrInvalidRegistry,
-		},
 	}
 
 	for _, tc := range testCases {
@@ -120,6 +134,45 @@ func TestCatalogFromURL(t *testing.T) {
 			srv := httptest.NewServer(tc.handler)
 
 			_, err := NewCatalogFromURL(context.TODO(), srv.URL)
+
+			if !errors.Is(err, tc.expectErr) {
+				t.Fatalf("expected %v got %v", tc.expectErr, err)
+			}
+		})
+	}
+}
+
+func TestCatalogFromFile(t *testing.T) {
+	t.Parallel()
+
+	catalogFile := filepath.Join(t.TempDir(), "catalog.json")
+	err := os.WriteFile(catalogFile, []byte(testCatalog), 0o644)
+	if err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	testCases := []struct {
+		name      string
+		file      string
+		expectErr error
+	}{
+		{
+			name:      "open catalog",
+			file:      catalogFile,
+			expectErr: nil,
+		},
+		{
+			name:      "catalog not found",
+			file:      "/path/not/found",
+			expectErr: ErrOpening,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := NewCatalogFromFile(tc.file)
 
 			if !errors.Is(err, tc.expectErr) {
 				t.Fatalf("expected %v got %v", tc.expectErr, err)
