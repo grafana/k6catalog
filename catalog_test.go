@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -71,6 +73,56 @@ func TestResolve(t *testing.T) {
 
 			if tc.expectErr == nil && mod != tc.expect {
 				t.Fatalf("expected %v got %v", tc.expect, mod)
+			}
+		})
+	}
+}
+
+const testCatalog = `{
+	"k6/x/output-kafka": {"Module": "github.com/grafana/xk6-output-kafka", "Versions": ["v0.1.0", "v0.2.0"]}
+}`
+
+func TestCatalogFromURL(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name      string
+		handler   http.HandlerFunc
+		expectErr error
+	}{
+		{
+			name: "download catalog",
+			handler: func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte(testCatalog))
+			},
+			expectErr: nil,
+		},
+		{
+			name: "catalog not found",
+			handler: func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+			},
+			expectErr: ErrDownload,
+		},
+		{
+			name: "empty catalog",
+			handler: func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			},
+			expectErr: ErrInvalidRegistry,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			srv := httptest.NewServer(tc.handler)
+
+			_, err := NewCatalogFromURL(context.TODO(), srv.URL)
+
+			if !errors.Is(err, tc.expectErr) {
+				t.Fatalf("expected %v got %v", tc.expectErr, err)
 			}
 		})
 	}
