@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 )
@@ -88,6 +89,16 @@ func NewCatalogFromJSON(stream io.Reader) (Catalog, error) {
 	return catalog{
 		dependencies: dependencies,
 	}, nil
+}
+
+// NewCatalog returns a catalog loaded from a location.
+// The location can be a local path or an URL
+func NewCatalog(ctx context.Context, location string) (Catalog, error) {
+	if strings.HasPrefix(location, "http") {
+		return NewCatalogFromURL(ctx, location)
+	}
+
+	return NewCatalogFromFile(location)
 }
 
 // NewCatalogFromFile creates a Catalog from a json file
