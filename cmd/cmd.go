@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -39,7 +40,7 @@ func New() *cobra.Command {
 				return fmt.Errorf("path to registry must be specified")
 			}
 
-			catalog, err := k6catalog.NewCatalogFromFile(path)
+			catalog, err := k6catalog.NewCatalog(context.TODO(), path)
 			if err != nil {
 				return err
 			}
@@ -55,7 +56,12 @@ func New() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&path, "catalog-file", "f", "", "path to catalog file")
+	cmd.Flags().StringVar(
+		&path,
+		"catalog",
+		k6catalog.DefaultCatalogURL,
+		"path to catalog. Can be a path to a local file or a URL",
+	)
 	cmd.Flags().StringVarP(&dependency, "name", "d", "", "name of dependency")
 	cmd.Flags().StringVarP(&constrains, "constrains", "c", "*", "version constrains")
 
