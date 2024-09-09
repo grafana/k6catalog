@@ -2,7 +2,9 @@
 package k6catalog
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,10 +20,13 @@ const (
 )
 
 var (
-	ErrCannotSatisfy     = errors.New("cannot satisfy dependency") //nolint:revive
-	ErrInvalidConstrain  = errors.New("invalid constrain")         //nolint:revive
-	ErrUnknownDependency = errors.New("unknown dependency")        //nolint:revive
-	ErrDownload          = errors.New("downloading catalog")       //nolint:revive
+	ErrCannotSatisfy      = errors.New("cannot satisfy dependency")        //nolint:revive
+	ErrDownload           = errors.New("downloading catalog")              //nolint:revive
+	ErrInvalidConstrain   = errors.New("invalid constrain")                //nolint:revive
+	ErrInvalidCatalog     = fmt.Errorf("invalid catalog")                  //nolint:revive
+	ErrOpening            = errors.New("opening catalog")                  //nolint:revive
+	ErrUnknownDependency  = errors.New("unknown dependency")               //nolint:revive
+	ErrDependencyNotFound = fmt.Errorf("dependency not found in registry") //nolint:revive
 )
 
 // Dependency defines a Dependency with a version constrain
@@ -45,22 +50,54 @@ type Catalog interface {
 	Resolve(ctx context.Context, dep Dependency) (Module, error)
 }
 
-type catalog struct {
-	registry Registry
+// entry defines a catalog entry
+type entry struct {
+	Module   string   `json:"module,omitempty"`
+	Versions []string `json:"versions,omitempty"`
 }
 
-// NewCatalog creates a catalog from a registry
-func NewCatalog(registry Registry) Catalog {
-	return catalog{registry: registry}
+type catalog struct {
+	dependencies map[string]entry
+}
+
+// getVersions returns the versions for a given module
+func (c catalog) getVersions(_ context.Context, mod string) (entry, error) {
+	e, found := c.dependencies[mod]
+	if !found {
+		return entry{}, fmt.Errorf("%w : %s", ErrDependencyNotFound, mod)
+	}
+
+	return e, nil
 }
 
 // NewCatalogFromJSON creates a Catalog from a json file
-func NewCatalogFromJSON(catalogFile string) (Catalog, error) {
-	registry, err := loadRegistryFromJSON(catalogFile)
+func NewCatalogFromJSON(stream io.Reader) (Catalog, error) {
+	buff := &bytes.Buffer{}
+	_, err := buff.ReadFrom(stream)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrInvalidCatalog, err)
 	}
-	return catalog{registry: registry}, nil
+
+	dependencies := map[string]entry{}
+	err = json.Unmarshal(buff.Bytes(), &dependencies)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalidCatalog, err)
+	}
+
+	return catalog{
+		dependencies: dependencies,
+	}, nil
+}
+
+// NewCatalogFromFile creates a Catalog from a json file
+func NewCatalogFromFile(catalogFile string) (Catalog, error) {
+	json, err := os.ReadFile(catalogFile) //nolint:forbidigo,gosec
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrOpening, err)
+	}
+
+	buff := bytes.NewBuffer(json)
+	return NewCatalogFromJSON(buff)
 }
 
 // NewCatalogFromURL creates a Catalog from a URL
@@ -80,24 +117,7 @@ func NewCatalogFromURL(ctx context.Context, catalogURL string) (Catalog, error) 
 		return nil, fmt.Errorf("%w %s", ErrDownload, resp.Status)
 	}
 
-	catalogFile, err := os.CreateTemp("", "catalog*.json") //nolint:forbidigo
-	if err != nil {
-		return nil, fmt.Errorf("%w %w", ErrDownload, err)
-	}
-
-	_, err = io.Copy(catalogFile, resp.Body)
-	if err != nil {
-		_ = catalogFile.Close()
-		_ = os.Remove(catalogFile.Name()) //nolint:forbidigo
-		return nil, fmt.Errorf("%w %w", ErrDownload, err)
-	}
-
-	err = catalogFile.Close()
-	if err != nil {
-		return nil, fmt.Errorf("%w %w", ErrDownload, err)
-	}
-
-	catalog, err := NewCatalogFromJSON(catalogFile.Name())
+	catalog, err := NewCatalogFromJSON(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("%w %w", ErrDownload, err)
 	}
@@ -107,11 +127,11 @@ func NewCatalogFromURL(ctx context.Context, catalogURL string) (Catalog, error) 
 
 // DefaultCatalog creates a Catalog from the default json file 'catalog.json'
 func DefaultCatalog() (Catalog, error) {
-	return NewCatalogFromJSON(defaultCatalogFile)
+	return NewCatalogFromFile(defaultCatalogFile)
 }
 
 func (c catalog) Resolve(ctx context.Context, dep Dependency) (Module, error) {
-	entry, err := c.registry.GetVersions(ctx, dep.Name)
+	entry, err := c.getVersions(ctx, dep.Name)
 	if err != nil {
 		return Module{}, err
 	}
