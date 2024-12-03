@@ -22,13 +22,13 @@ const (
 )
 
 var (
-	ErrCannotSatisfy      = errors.New("cannot satisfy dependency")        //nolint:revive
-	ErrDownload           = errors.New("downloading catalog")              //nolint:revive
-	ErrInvalidConstrain   = errors.New("invalid constrain")                //nolint:revive
-	ErrInvalidCatalog     = fmt.Errorf("invalid catalog")                  //nolint:revive
-	ErrOpening            = errors.New("opening catalog")                  //nolint:revive
-	ErrUnknownDependency  = errors.New("unknown dependency")               //nolint:revive
-	ErrDependencyNotFound = fmt.Errorf("dependency not found in registry") //nolint:revive
+	ErrCannotSatisfy     = errors.New("cannot satisfy dependency") //nolint:revive
+	ErrDownload          = errors.New("downloading catalog")       //nolint:revive
+	ErrInvalidConstrain  = errors.New("invalid constrain")         //nolint:revive
+	ErrInvalidCatalog    = fmt.Errorf("invalid catalog")           //nolint:revive
+	ErrOpening           = errors.New("opening catalog")           //nolint:revive
+	ErrUnknownDependency = errors.New("unknown dependency")        //nolint:revive
+
 )
 
 // Dependency defines a Dependency with a version constrain
@@ -66,7 +66,7 @@ type catalog struct {
 func (c catalog) getVersions(_ context.Context, mod string) (entry, error) {
 	e, found := c.dependencies[mod]
 	if !found {
-		return entry{}, fmt.Errorf("%w : %s", ErrDependencyNotFound, mod)
+		return entry{}, fmt.Errorf("%w : %s", ErrUnknownDependency, mod)
 	}
 
 	return e, nil
