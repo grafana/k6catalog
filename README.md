@@ -1,3 +1,6 @@
+> Deprecation notice: the catalog functionality [has been merged](https://github.com/grafana/k6build/pull/91) into the https://github.com/grafana/k6build repository is no longer used.
+
+
 # k6catalog
 
 k6catalog is a library that maps a dependency for k6 extension with optional semantic versioning constrains to the corresponding golang modules.
